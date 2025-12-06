@@ -6,8 +6,8 @@ import { Power, Zap, Activity, Skull, Volume2, VolumeX, Play, ExternalLink } fro
 import { DetectionResult, MOEA_COLORS, ColorOption } from './types';
 import Visualizer from './components/Visualizer';
 
-// Reliable MP3 Source: "Abstract Dark World" (Dark/Industrial/Ambient)
-const DEMO_TRACK_URL = "https://cdn.pixabay.com/audio/2022/11/02/audio_c317589b9d.mp3";
+// Local MP3: Imagination
+const DEMO_TRACK_URL = "/imagination.mp3";
 const FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1599368558742-1262d0806495?q=80&w=400&auto=format&fit=crop";
 
 const App = () => {
