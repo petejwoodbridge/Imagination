@@ -1,0 +1,7 @@
+{
+  "name": "Imagination",
+  "description": "An avant-garde, surreal augmented reality experience reacting to hand gestures, inspired by the album MOEA - IMAGINATION.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
