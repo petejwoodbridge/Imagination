@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Imagination</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background-color: #000;
+        color: #fff;
+        font-family: 'Space Mono', monospace;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      
+      /* CRT Scanline Effect */
+      .scanlines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0) 50%,
+          rgba(0, 0, 0, 0.2) 50%,
+          rgba(0, 0, 0, 0.2)
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      /* Vignette */
+      .vignette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.8) 100%);
+        pointer-events: none;
+        z-index: 40;
+      }
+
+      .glitch-text {
+        position: relative;
+        display: inline-block;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
+      .glitch-text::before {
+        left: 2px;
+        text-shadow: -1px 0 #ff00c1;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+      }
+      .glitch-text::after {
+        left: -2px;
+        text-shadow: -1px 0 #00fff9;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim2 5s infinite linear alternate-reverse;
+      }
+      @keyframes glitch-anim {
+        0% { clip: rect(31px, 9999px, 91px, 0); }
+        20% { clip: rect(81px, 9999px, 12px, 0); }
+        40% { clip: rect(10px, 9999px, 83px, 0); }
+        60% { clip: rect(54px, 9999px, 34px, 0); }
+        80% { clip: rect(21px, 9999px, 5px, 0); }
+        100% { clip: rect(15px, 9999px, 72px, 0); }
+      }
+      @keyframes glitch-anim2 {
+        0% { clip: rect(66px, 9999px, 11px, 0); }
+        20% { clip: rect(22px, 9999px, 6px, 0); }
+        40% { clip: rect(8px, 9999px, 86px, 0); }
+        60% { clip: rect(48px, 9999px, 19px, 0); }
+        80% { clip: rect(32px, 9999px, 62px, 0); }
+        100% { clip: rect(4px, 9999px, 94px, 0); }
+      }
+      
+      /* Global Error Handler Display */
+      #error-display {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        color: #ff0000;
+        z-index: 9999;
+        padding: 2rem;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow: auto;
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "@mediapipe/tasks-vision": "https://aistudiocdn.com/@mediapipe/tasks-vision@^0.10.22-rc.20250304",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^9.4.2",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "three": "https://aistudiocdn.com/three@^0.181.2"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/Imagination/assets/index-DP_2H65S.js"></script>
+</head>
+  <body>
+    <div id="error-display"></div>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        const display = document.getElementById('error-display');
+        if (display) {
+          display.style.display = 'block';
+          display.innerHTML += `ERROR: ${message}\nSOURCE: ${source}:${lineno}\n\n`;
+        }
+      };
+    </script>
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+    <div id="root" style="position: relative; z-index: 100;"></div>
+  </body>
+</html>
