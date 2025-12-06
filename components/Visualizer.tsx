@@ -156,28 +156,28 @@ const SwarmParticles = ({ trackingData }: { trackingData: DetectionResult | null
   );
 };
 
-// New Head Tracking Component
+// New Head Tracking Component - Animal Shape Morphing
 const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | null, color: string }) => {
   const meshRef = useRef<THREE.Group>(null);
+  const animalShapesRef = useRef<THREE.Mesh[]>([]);
+  const timeRef = useRef(0);
+
+  // Animal shape types: tetrahedron, octahedron, icosahedron
+  const animalShapes = ['tetrahedron', 'octahedron', 'icosahedron'];
 
   useFrame(() => {
     if (!meshRef.current) return;
+    
+    timeRef.current += 0.016; // ~60fps increment
     
     // Default position (hidden or neutral)
     let targetPos = new THREE.Vector3(0, 10, 0);
     let scale = 0;
 
     if (trackingData && trackingData.faceLandmarks.length > 0) {
-        // Nose tip is usually index 1 or 4. 
-        // 1 is tip of nose.
         const nose = trackingData.faceLandmarks[0][1];
-        
-        // Map normalized coordinates to world space (roughly matching plane size)
-        // x: 0..1 => -8..8
-        // y: 0..1 => 5..-5
         const x = (nose.x - 0.5) * -16; 
         const y = (nose.y - 0.5) * -10;
-        // z is relative depth. We want it slightly behind detection
         const z = -nose.z * 5; 
 
         targetPos.set(x, y, z);
@@ -186,7 +186,6 @@ const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | nul
 
     meshRef.current.position.lerp(targetPos, 0.1);
     
-    // Use scale for smooth entrance/exit
     const currentScale = meshRef.current.scale.x;
     const nextScale = THREE.MathUtils.lerp(currentScale, scale, 0.1);
     meshRef.current.scale.set(nextScale, nextScale, nextScale);
@@ -194,16 +193,32 @@ const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | nul
     // Rotate the halo
     meshRef.current.rotation.y += 0.01;
     meshRef.current.rotation.z += 0.005;
+
+    // Cycle through animal shapes every 2 seconds
+    const shapeIndex = Math.floor((timeRef.current / 2.0) % animalShapes.length);
+    animalShapesRef.current.forEach((mesh, i) => {
+      mesh.visible = i === shapeIndex;
+    });
   });
 
   return (
     <group ref={meshRef}>
-        {/* Outer Ring */}
-        <mesh>
+        {/* Tetrahedron (sharp, pointy) */}
+        <mesh ref={(m) => { if (m && !animalShapesRef.current[0]) animalShapesRef.current[0] = m; }}>
+            <tetrahedronGeometry args={[1.5, 0]} />
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+        </mesh>
+        {/* Octahedron (geometric animal) */}
+        <mesh ref={(m) => { if (m && !animalShapesRef.current[1]) animalShapesRef.current[1] = m; }}>
+            <octahedronGeometry args={[1.5, 0]} />
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+        </mesh>
+        {/* Icosahedron (smooth, spherical) */}
+        <mesh ref={(m) => { if (m && !animalShapesRef.current[2]) animalShapesRef.current[2] = m; }}>
             <icosahedronGeometry args={[1.5, 0]} />
             <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
         </mesh>
-        {/* Inner Ring */}
+        {/* Inner Ring (stays constant) */}
         <mesh rotation={[Math.PI / 4, 0, 0]}>
             <torusGeometry args={[1.0, 0.02, 16, 100]} />
             <meshBasicMaterial color="white" />
