@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { DetectionResult } from '../types';
+import { DetectionResult, EffectMode } from '../types';
 
 interface VisualizerProps {
   videoTexture: THREE.VideoTexture | null;
@@ -9,6 +9,7 @@ interface VisualizerProps {
   activeColor: string;
   audioIntensity: number;
   songProgress: number;
+  effectMode: EffectMode;
 }
 
 // Enhanced VHS/Grunge Shader
@@ -22,7 +23,8 @@ const BackgroundShader = {
     uDistortion: { value: 0.0 },
     uColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
     uIntensity: { value: 0.0 },
-    uTheme: { value: 0.0 } // 0=fantasy, 1=glitch, 2=digital, 3=imagination
+    uTheme: { value: 0.0 }, // 0=fantasy, 1=glitch, 2=digital, 3=imagination
+    uEffectMode: { value: 0.0 } // 0=normal, 1=kaleidoscope, 2=video-prominent, 3=person-duplication, 4=wild
   },
   vertexShader: `
     varying vec2 vUv;
@@ -41,14 +43,46 @@ const BackgroundShader = {
     uniform vec3 uColor;
     uniform float uIntensity;
     uniform float uTheme;
+    uniform float uEffectMode;
     varying vec2 vUv;
 
     float rand(vec2 co){
         return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
     }
+    
+    // Kaleidoscope effect
+    vec2 kaleidoscope(vec2 uv, float angle) {
+      vec2 centered = uv - vec2(0.5);
+      float r = length(centered);
+      float a = atan(centered.y, centered.x);
+      a = mod(a + angle, 3.14159 / 3.0);
+      return vec2(cos(a), sin(a)) * r + vec2(0.5);
+    }
+    
+    // Duplication effect (create mirror versions)
+    vec2 duplicate(vec2 uv, float offset) {
+      return mod(uv * 2.0 + vec2(offset, 0.0), 1.0);
+    }
 
     void main() {
       vec2 uv = vUv;
+      
+      // Apply effect mode transformations first
+      if (uEffectMode > 0.5 && uEffectMode < 1.5) {
+        // Kaleidoscope effect
+        uv = kaleidoscope(uv, uTime * 2.0);
+      } else if (uEffectMode > 1.5 && uEffectMode < 2.5) {
+        // Video prominent - will be handled by opacity adjustment
+        // Just keep normal UV for now
+      } else if (uEffectMode > 2.5 && uEffectMode < 3.5) {
+        // Person duplication - create mirror/ghost effect
+        uv = duplicate(uv, sin(uTime) * 0.3);
+      } else if (uEffectMode > 3.5) {
+        // Wild mode - chaotic combination
+        uv = kaleidoscope(uv, uTime * 3.0 + sin(uTime * 2.0) * 2.0);
+        uv += sin(uv.x * 10.0 + uTime) * 0.05;
+        uv += cos(uv.y * 10.0 + uTime) * 0.05;
+      }
       
       // Tracking error line (VHS artifact)
       float trackingLine = step(0.98, sin(uv.y * 3.0 + uTime * 20.0)) * step(sin(uTime * 5.0), 0.0);
@@ -263,8 +297,9 @@ const HeadHalo = ({ trackingData, color, audioIntensity }: { trackingData: Detec
   )
 }
 
-const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, activeColor, audioIntensity, songProgress }) => {
+const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, activeColor, audioIntensity, songProgress, effectMode }) => {
   const shaderRef = useRef<THREE.ShaderMaterial>(null);
+  // Removed unused overlayVideoOpacityRef
   const { viewport, camera } = useThree();
 
   const distance = 15;
@@ -274,6 +309,14 @@ const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, act
 
   // Calculate current theme (0..4 over full song)
   const themeValue = songProgress * 4;
+  
+  // Map effect mode to numeric value
+  const effectModeValue = 
+    effectMode === 'normal' ? 0 :
+    effectMode === 'kaleidoscope' ? 1 :
+    effectMode === 'video-prominent' ? 2 :
+    effectMode === 'person-duplication' ? 3 :
+    4; // wild
 
   useFrame((state) => {
     if (shaderRef.current) {
@@ -281,6 +324,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, act
       shaderRef.current.uniforms.uColor.value.set(activeColor);
       shaderRef.current.uniforms.uIntensity.value = audioIntensity;
       shaderRef.current.uniforms.uTheme.value = themeValue;
+      shaderRef.current.uniforms.uEffectMode.value = effectModeValue;
       
       if (trackingData && trackingData.handLandmarks.length > 0) {
          const rawX = trackingData.handLandmarks[0][8].x;

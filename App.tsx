@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { HandLandmarker, FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { Power, Zap, Activity, Skull, Volume2, VolumeX, Play, ExternalLink } from 'lucide-react';
-import { DetectionResult, MOEA_COLORS, ColorOption } from './types';
+import { DetectionResult, MOEA_COLORS, ColorOption, EffectMode } from './types';
 import Visualizer from './components/Visualizer';
 import AudioVisualizer from './components/AudioVisualizer';
 
@@ -13,6 +13,7 @@ const FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1599368558742-1262
 
 const App = () => {
   const [activeColor, setActiveColor] = useState<ColorOption>(MOEA_COLORS[0]);
+  const [effectMode, setEffectMode] = useState<EffectMode>('normal');
   const [isArActive, setIsArActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
@@ -60,7 +61,7 @@ const App = () => {
     };
   }, [isPlaying]);
 
-  // Manage overlay video opacity based on intensity and song progress
+  // Manage overlay video opacity based on intensity, song progress, and effect mode
   useEffect(() => {
     if (!overlayVideoRef.current || !isArActive || !isPlaying) {
       setOverlayOpacity(0);
@@ -68,14 +69,20 @@ const App = () => {
     }
 
     // Fade in/out based on intensity peaks and song progression
-    // Occasional flashes during high-intensity moments
-    const baseOpacity = Math.sin(songProgress * Math.PI * 2) * 0.15; // Gentle wave
-    const intensityBoost = audioIntensity > 0.6 ? (audioIntensity - 0.6) * 0.3 : 0; // Peaks during loud moments
-    const targetOpacity = Math.max(baseOpacity, intensityBoost) * 0.4; // Keep it subtle (max ~40%)
+    let baseOpacity = Math.sin(songProgress * Math.PI * 2) * 0.15;
+    const intensityBoost = audioIntensity > 0.6 ? (audioIntensity - 0.6) * 0.3 : 0;
+    let targetOpacity = Math.max(baseOpacity, intensityBoost) * 0.4;
+    
+    // Adjust opacity based on effect mode
+    if (effectMode === 'video-prominent') {
+      targetOpacity = 0.6 + audioIntensity * 0.3; // Much more prominent (60-90%)
+    } else if (effectMode === 'wild') {
+      targetOpacity = Math.sin(audioIntensity * Math.PI * 4 + songProgress * Math.PI) * 0.3 + 0.3; // Chaotic
+    }
     
     setOverlayOpacity(targetOpacity);
     overlayVideoRef.current.play().catch(() => {}); // Auto-play on interaction
-  }, [audioIntensity, songProgress, isArActive, isPlaying]);
+  }, [audioIntensity, songProgress, isArActive, isPlaying, effectMode]);
 
   const startExperience = async () => {
     // 1. Initialize Audio IMMEDIATELY to capture user gesture
@@ -261,6 +268,7 @@ const App = () => {
               activeColor={activeColor.hex}
               audioIntensity={audioIntensity}
               songProgress={songProgress}
+              effectMode={effectMode}
             />
           </Canvas>
           
@@ -394,12 +402,16 @@ const App = () => {
               
               {/* Centered Controls */}
               <div className="pointer-events-auto flex items-center gap-4 bg-black border border-white/20 p-2 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-                 {/* Color Palette */}
+                 {/* Color Palette / Effect Modes */}
                  <div className="flex gap-2">
-                    {MOEA_COLORS.map((c) => (
+                    {MOEA_COLORS.map((c, index) => (
                       <button
                         key={c.name}
-                        onClick={() => setActiveColor(c)}
+                        onClick={() => {
+                          setActiveColor(c);
+                          const modes: EffectMode[] = ['normal', 'kaleidoscope', 'video-prominent', 'person-duplication', 'wild'];
+                          setEffectMode(modes[index]);
+                        }}
                         className={`w-4 h-4 border transition-all ${
                           activeColor.name === c.name 
                             ? 'border-white bg-white' 

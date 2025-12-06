@@ -4,6 +4,8 @@ export interface ColorOption {
   intensity: number;
 }
 
+export type EffectMode = 'normal' | 'kaleidoscope' | 'video-prominent' | 'person-duplication' | 'wild';
+
 export interface HandLandmark {
   x: number;
   y: number;
