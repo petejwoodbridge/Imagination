@@ -5,6 +5,7 @@ import { HandLandmarker, FaceLandmarker, FilesetResolver } from '@mediapipe/task
 import { Power, Zap, Activity, Skull, Volume2, VolumeX, Play, ExternalLink } from 'lucide-react';
 import { DetectionResult, MOEA_COLORS, ColorOption } from './types';
 import Visualizer from './components/Visualizer';
+import AudioVisualizer from './components/AudioVisualizer';
 
 // Local MP3: Imagination
 const DEMO_TRACK_URL = `${import.meta.env.BASE_URL}imagination.mp3`;
@@ -22,6 +23,7 @@ const App = () => {
   const [audioError, setAudioError] = useState(false);
   const [audioIntensity, setAudioIntensity] = useState(0);
   const [songProgress, setSongProgress] = useState(0); // 0..1
+  const [analyserData, setAnalyserData] = useState<Uint8Array | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -43,6 +45,7 @@ const App = () => {
         const normalized = Math.min(average / 255, 1.0);
         
         setAudioIntensity(normalized);
+        setAnalyserData(new Uint8Array(dataArrayRef.current));
         setSongProgress(audioRef.current.currentTime / (audioRef.current.duration || 166)); // 166s = 2:46
       }
       requestAnimationFrame(analyze);
@@ -401,6 +404,11 @@ const App = () => {
                 </div>
                 <div>MOD: {activeColor.name}</div>
               </div>
+            </div>
+
+            {/* Right Side - Audio Visualizer */}
+            <div className="absolute top-6 right-6 z-50 pointer-events-none">
+              <AudioVisualizer audioIntensity={audioIntensity} analyserData={analyserData} />
             </div>
 
           </div>
