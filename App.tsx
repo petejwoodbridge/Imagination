@@ -291,9 +291,12 @@ const App = () => {
                <div className="absolute bottom-0 left-0 w-2 h-2 bg-white"></div>
                <div className="absolute bottom-0 right-0 w-2 h-2 bg-white"></div>
                
-               <h1 className="text-8xl font-black tracking-tighter mb-4 glitch-text leading-none" data-text="MOEA">MOEA</h1>
+               <img 
+                 src={`${import.meta.env.BASE_URL}imaginationCover.jpg`}
+                 alt="MOEA - IMAGINATION"
+                 className="w-48 h-48 object-cover mb-4"
+               />
                <div className="w-full h-px bg-white mb-4"></div>
-               <h2 className="text-xl tracking-[1em] text-center mb-8">IMAGINATION</h2>
                
                <button
                  onClick={!isLoading ? startExperience : undefined}
