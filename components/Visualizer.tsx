@@ -179,14 +179,16 @@ const SwarmParticles = ({ trackingData }: { trackingData: DetectionResult | null
   );
 };
 
-// New Head Tracking Component - Animal Shape Morphing
-const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | null, color: string }) => {
+// New Head Tracking Component - Animal Shape Morphing with Audio Response
+const HeadHalo = ({ trackingData, color, audioIntensity }: { trackingData: DetectionResult | null, color: string, audioIntensity: number }) => {
   const meshRef = useRef<THREE.Group>(null);
   const animalShapesRef = useRef<THREE.Mesh[]>([]);
   const timeRef = useRef(0);
 
-  // Animal shape types: tetrahedron, octahedron, icosahedron
-  const animalShapes = ['tetrahedron', 'octahedron', 'icosahedron'];
+  // Animal-inspired shape names: wolf ears, bird wings, rabbit ears
+  const animalShapes = ['wolf', 'bird', 'rabbit'];
+  const baseSize = 1.5;
+  const maxAudioScale = 2.5; // Max size at peak audio
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -213,38 +215,49 @@ const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | nul
     const nextScale = THREE.MathUtils.lerp(currentScale, scale, 0.1);
     meshRef.current.scale.set(nextScale, nextScale, nextScale);
 
-    // Rotate the halo
-    meshRef.current.rotation.y += 0.01;
-    meshRef.current.rotation.z += 0.005;
+    // Rotate the halo with intensity-driven wobble
+    meshRef.current.rotation.y += 0.01 + audioIntensity * 0.02;
+    meshRef.current.rotation.z += 0.005 + audioIntensity * 0.01;
 
     // Cycle through animal shapes every 2 seconds
     const shapeIndex = Math.floor((timeRef.current / 2.0) % animalShapes.length);
+    
+    // Audio-responsive scaling
+    const audioScale = 1 + audioIntensity * (maxAudioScale - 1);
+    
     animalShapesRef.current.forEach((mesh, i) => {
       mesh.visible = i === shapeIndex;
+      if (i === shapeIndex) {
+        mesh.scale.set(audioScale, audioScale, audioScale);
+      }
     });
   });
 
   return (
     <group ref={meshRef}>
-        {/* Tetrahedron (sharp, pointy) */}
+        {/* Wolf/Predator - Tetrahedron (sharp, pointy ears) */}
         <mesh ref={(m) => { if (m && !animalShapesRef.current[0]) animalShapesRef.current[0] = m; }}>
-            <tetrahedronGeometry args={[1.5, 0]} />
-            <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+            <tetrahedronGeometry args={[baseSize, 1]} />
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.6} />
         </mesh>
-        {/* Octahedron (geometric animal) */}
+        {/* Bird/Wings - Octahedron (geometric, wing-like) */}
         <mesh ref={(m) => { if (m && !animalShapesRef.current[1]) animalShapesRef.current[1] = m; }}>
-            <octahedronGeometry args={[1.5, 0]} />
-            <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+            <octahedronGeometry args={[baseSize, 1]} />
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.6} />
         </mesh>
-        {/* Icosahedron (smooth, spherical) */}
+        {/* Rabbit/Prey - Icosahedron (smooth, soft, rounded) */}
         <mesh ref={(m) => { if (m && !animalShapesRef.current[2]) animalShapesRef.current[2] = m; }}>
-            <icosahedronGeometry args={[1.5, 0]} />
-            <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+            <icosahedronGeometry args={[baseSize, 2]} />
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.6} />
         </mesh>
-        {/* Inner Ring (stays constant) */}
+        {/* Inner Ring (pulsates with audio) */}
         <mesh rotation={[Math.PI / 4, 0, 0]}>
             <torusGeometry args={[1.0, 0.02, 16, 100]} />
-            <meshBasicMaterial color="white" />
+            <meshBasicMaterial 
+              color="white" 
+              transparent
+              opacity={0.4 + audioIntensity * 0.6}
+            />
         </mesh>
     </group>
   )
@@ -309,7 +322,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, act
       </mesh>
       
       <SwarmParticles trackingData={trackingData} />
-      <HeadHalo trackingData={trackingData} color={activeColor} />
+      <HeadHalo trackingData={trackingData} color={activeColor} audioIntensity={audioIntensity} />
       
       <ambientLight intensity={0.5} />
     </>
