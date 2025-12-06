@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { HandLandmarker, FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
@@ -20,17 +20,62 @@ const App = () => {
   // Audio State
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState(false);
+  const [audioIntensity, setAudioIntensity] = useState(0);
+  const [songProgress, setSongProgress] = useState(0); // 0..1
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const requestRef = useRef<number | null>(null);
+
+  // Audio analysis loop
+  useEffect(() => {
+    if (!isPlaying || !audioRef.current) return;
+
+    const analyze = () => {
+      if (analyserRef.current && dataArrayRef.current && audioRef.current) {
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
+        const average = dataArrayRef.current.reduce((a, b) => a + b) / dataArrayRef.current.length;
+        const normalized = Math.min(average / 255, 1.0);
+        
+        setAudioIntensity(normalized);
+        setSongProgress(audioRef.current.currentTime / (audioRef.current.duration || 166)); // 166s = 2:46
+      }
+      requestAnimationFrame(analyze);
+    };
+
+    requestAnimationFrame(analyze);
+
+    return () => {
+      // Cleanup handled by cleanup
+    };
+  }, [isPlaying]);
 
   const startExperience = async () => {
     // 1. Initialize Audio IMMEDIATELY to capture user gesture
     if (audioRef.current) {
       audioRef.current.volume = 0.8;
+      
+      // Initialize Web Audio API for analysis
+      if (!audioContextRef.current) {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioContext;
+        
+        const source = audioContext.createMediaElementSource(audioRef.current);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        analyserRef.current = analyser;
+        dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount) as Uint8Array;
+      }
+      
       const playPromise = audioRef.current.play();
       
       if (playPromise !== undefined) {
@@ -192,6 +237,8 @@ const App = () => {
               videoTexture={videoTexture} 
               trackingData={trackingData} 
               activeColor={activeColor.hex}
+              audioIntensity={audioIntensity}
+              songProgress={songProgress}
             />
           </Canvas>
         </div>

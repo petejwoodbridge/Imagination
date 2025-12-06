@@ -7,6 +7,8 @@ interface VisualizerProps {
   videoTexture: THREE.VideoTexture | null;
   trackingData: DetectionResult | null;
   activeColor: string;
+  audioIntensity: number;
+  songProgress: number;
 }
 
 // Enhanced VHS/Grunge Shader
@@ -14,11 +16,13 @@ const BackgroundShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0 },
-    uContrast: { value: 2.2 }, // Higher contrast
-    uBrightness: { value: -0.05 }, 
+    uContrast: { value: 2.2 },
+    uBrightness: { value: -0.05 },
     uHandPos: { value: new THREE.Vector2(0.5, 0.5) },
     uDistortion: { value: 0.0 },
-    uColor: { value: new THREE.Color(1.0, 1.0, 1.0) }
+    uColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+    uIntensity: { value: 0.0 },
+    uTheme: { value: 0.0 } // 0=fantasy, 1=glitch, 2=digital, 3=imagination
   },
   vertexShader: `
     varying vec2 vUv;
@@ -35,6 +39,8 @@ const BackgroundShader = {
     uniform vec2 uHandPos;
     uniform float uDistortion;
     uniform vec3 uColor;
+    uniform float uIntensity;
+    uniform float uTheme;
     varying vec2 vUv;
 
     float rand(vec2 co){
@@ -71,20 +77,37 @@ const BackgroundShader = {
       // High Contrast Curve
       gray = (gray - 0.5) * uContrast + 0.5 + uBrightness;
       
-      // Noise grain
-      float grain = (rand(uv * uTime * 10.0) - 0.5) * 0.3;
+      // Theme-based effects
+      // Theme 0: Fantasy - soft glow, reduce grain
+      // Theme 1: Glitch - extreme distortion, high grain
+      // Theme 2: Digital - crisp, pixelated, clean lines
+      // Theme 3: Imagination - blend of all, dreamy
+      
+      float themeBlend = mod(uTheme, 1.0);
+      float themePhase = floor(uTheme);
+      
+      // Intensity-driven grain and distortion
+      float grain = (rand(uv * uTime * 10.0) - 0.5) * 0.3 * (0.5 + uIntensity);
       gray += grain;
 
-      // Scanlines
-      float scanline = sin(uv.y * 600.0) * 0.1;
+      // Theme-specific scanlines
+      float scanlineIntensity = 0.1;
+      if (themePhase == 1.0) {
+        scanlineIntensity = 0.2 + uIntensity * 0.3; // Glitch: more scanlines
+      } else if (themePhase == 2.0) {
+        scanlineIntensity = 0.05; // Digital: crisp, fewer lines
+      }
+      
+      float scanline = sin(uv.y * 600.0) * scanlineIntensity;
       gray -= scanline;
 
       // Force Black and White output primarily
       vec3 finalColor = vec3(gray);
 
-      // Tint slightly with active color based on distortion level (glitch moments)
-      vec3 tint = mix(vec3(gray), uColor * gray, uDistortion * 0.5); 
-      finalColor = mix(finalColor, tint, 0.3);
+      // Tint with active color and intensity
+      float colorTint = mix(0.2, 0.5, uIntensity);
+      vec3 tint = mix(vec3(gray), uColor * gray, uDistortion * 0.5 + colorTint); 
+      finalColor = mix(finalColor, tint, 0.2 + uIntensity * 0.3);
 
       gl_FragColor = vec4(finalColor, 1.0);
     }
@@ -227,7 +250,7 @@ const HeadHalo = ({ trackingData, color }: { trackingData: DetectionResult | nul
   )
 }
 
-const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, activeColor }) => {
+const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, activeColor, audioIntensity, songProgress }) => {
   const shaderRef = useRef<THREE.ShaderMaterial>(null);
   const { viewport, camera } = useThree();
 
@@ -236,10 +259,15 @@ const Visualizer: React.FC<VisualizerProps> = ({ videoTexture, trackingData, act
   const height = 2 * Math.tan(vFov / 2) * distance;
   const width = height * viewport.aspect;
 
+  // Calculate current theme (0..4 over full song)
+  const themeValue = songProgress * 4;
+
   useFrame((state) => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       shaderRef.current.uniforms.uColor.value.set(activeColor);
+      shaderRef.current.uniforms.uIntensity.value = audioIntensity;
+      shaderRef.current.uniforms.uTheme.value = themeValue;
       
       if (trackingData && trackingData.handLandmarks.length > 0) {
          const rawX = trackingData.handLandmarks[0][8].x;
