@@ -7,7 +7,7 @@ import { DetectionResult, MOEA_COLORS, ColorOption } from './types';
 import Visualizer from './components/Visualizer';
 
 // Local MP3: Imagination
-const DEMO_TRACK_URL = "/imagination.mp3";
+const DEMO_TRACK_URL = `${import.meta.env.BASE_URL}imagination.mp3`;
 const FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1599368558742-1262d0806495?q=80&w=400&auto=format&fit=crop";
 
 const App = () => {
@@ -244,7 +244,7 @@ const App = () => {
                 <div className={`w-32 h-32 bg-neutral-900 border ${isPlaying ? 'border-red-600' : 'border-white/30'} group-hover:border-white transition-colors flex items-center justify-center overflow-hidden`}>
                    {/* Surreal Rabbit Image */}
                    <img 
-                      src="/imaginationCover.jpg"
+                      src={`${import.meta.env.BASE_URL}imaginationCover.jpg`}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = FALLBACK_IMAGE_URL;
                       }}
