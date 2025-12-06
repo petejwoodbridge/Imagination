@@ -244,11 +244,11 @@ const App = () => {
                 <div className={`w-32 h-32 bg-neutral-900 border ${isPlaying ? 'border-red-600' : 'border-white/30'} group-hover:border-white transition-colors flex items-center justify-center overflow-hidden`}>
                    {/* Surreal Rabbit Image */}
                    <img 
-                     src="/album_cover.png"
+                      src="/imaginationCover.jpg"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = FALLBACK_IMAGE_URL;
                       }}
-                      alt="MOEA - IMAGINATION" 
+                      alt="MOEA - IMAGINATION"
                       className={`w-full h-full object-cover transition-all duration-1000 ${isPlaying ? 'mix-blend-normal scale-105' : 'mix-blend-luminosity scale-100'}`}
                    />
                    {/* Hover Overlay */}
