@@ -267,12 +267,14 @@ const App = () => {
              </a>
              
              <div className="flex flex-col pt-1">
-                <button 
-                    onClick={toggleAudio}
-                    className={`text-left text-xs font-bold tracking-widest px-2 py-0.5 mb-1 transition-all ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-gray-400 hover:bg-white hover:text-black'}`}
+                <a 
+                    href="https://open.spotify.com/artist/3LXxiBWZbjFQPrtL0yZ2Q8"
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`text-left text-xs font-bold tracking-widest px-2 py-0.5 mb-1 transition-all inline-block ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-gray-400 hover:bg-white hover:text-black'}`}
                 >
                     {isPlaying ? 'LISTENING NOW' : 'LISTEN NOW'}
-                </button>
+                </a>
                 <a 
                     href="https://open.spotify.com/artist/3LXxiBWZbjFQPrtL0yZ2Q8" 
                     target="_blank" 
