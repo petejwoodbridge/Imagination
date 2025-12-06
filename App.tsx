@@ -24,8 +24,10 @@ const App = () => {
   const [audioIntensity, setAudioIntensity] = useState(0);
   const [songProgress, setSongProgress] = useState(0); // 0..1
   const [analyserData, setAnalyserData] = useState<Uint8Array | null>(null);
+  const [overlayOpacity, setOverlayOpacity] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
+  const overlayVideoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -57,6 +59,23 @@ const App = () => {
       // Cleanup handled by cleanup
     };
   }, [isPlaying]);
+
+  // Manage overlay video opacity based on intensity and song progress
+  useEffect(() => {
+    if (!overlayVideoRef.current || !isArActive || !isPlaying) {
+      setOverlayOpacity(0);
+      return;
+    }
+
+    // Fade in/out based on intensity peaks and song progression
+    // Occasional flashes during high-intensity moments
+    const baseOpacity = Math.sin(songProgress * Math.PI * 2) * 0.15; // Gentle wave
+    const intensityBoost = audioIntensity > 0.6 ? (audioIntensity - 0.6) * 0.3 : 0; // Peaks during loud moments
+    const targetOpacity = Math.max(baseOpacity, intensityBoost) * 0.4; // Keep it subtle (max ~40%)
+    
+    setOverlayOpacity(targetOpacity);
+    overlayVideoRef.current.play().catch(() => {}); // Auto-play on interaction
+  }, [audioIntensity, songProgress, isArActive, isPlaying]);
 
   const startExperience = async () => {
     // 1. Initialize Audio IMMEDIATELY to capture user gesture
@@ -244,6 +263,22 @@ const App = () => {
               songProgress={songProgress}
             />
           </Canvas>
+          
+          {/* Subtle overlay video blend */}
+          <video
+            ref={overlayVideoRef}
+            src={`${import.meta.env.BASE_URL}overlay.mp4`}
+            playsInline
+            muted
+            loop
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              opacity: overlayOpacity,
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+              transition: 'opacity 0.3s ease-out'
+            }}
+          />
         </div>
       )}
 
