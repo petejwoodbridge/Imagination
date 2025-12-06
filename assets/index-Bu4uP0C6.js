@@ -3967,19 +3967,19 @@ No matching component was found for:
     void main() {
       vec2 uv = vUv;
       
-      // Liquid swirl effect toward mouse position
+      // Liquid swirl effect toward mouse position - increased strength
       vec2 center = vec2(0.5);
       vec2 toMouse = uMousePos - center;
       vec2 fromMouse = uv - uMousePos;
       float distFromMouse = length(fromMouse);
       
-      // Create liquid swirling pull toward mouse
+      // Create liquid swirling pull toward mouse with more aggressive pull
       float swirl = atan(fromMouse.y, fromMouse.x);
-      float liquidPull = (1.0 - clamp(distFromMouse * 2.0, 0.0, 1.0)) * 0.08;
+      float liquidPull = (1.0 - clamp(distFromMouse * 1.5, 0.0, 1.0)) * 0.25;
       
-      // Distort UV toward mouse with swirling effect
-      vec2 swirledDir = vec2(cos(swirl + liquidPull * 2.0), sin(swirl + liquidPull * 2.0));
-      uv += swirledDir * liquidPull * (0.5 - distFromMouse * 0.5);
+      // Distort UV toward mouse with stronger swirling effect
+      vec2 swirledDir = vec2(cos(swirl + liquidPull * 3.0), sin(swirl + liquidPull * 3.0));
+      uv += swirledDir * liquidPull * (1.0 - distFromMouse * 0.3);
       
       vec3 sampled;
       
